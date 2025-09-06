@@ -24,6 +24,7 @@ import { Icon } from "./components/DemoComponents";
 import { Features } from "./components/DemoComponents";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BrowserQRCodeReader } from "@zxing/browser";
 
 // Minimal typings for the BarcodeDetector API to avoid 'any'
 type QRDetector = {
@@ -47,6 +48,10 @@ export default function App() {
   const detectorRef = useRef<QRDetector | null>(null);
   const [decodedPayload, setDecodedPayload] = useState<string | null>(null);
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const zxingReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const zxingAbortRef = useRef<AbortController | null>(null);
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
@@ -89,8 +94,17 @@ export default function App() {
     return null;
   }, [context, frameAdded, handleAddFrame]);
 
+  const stopZxing = useCallback(() => {
+    if (zxingAbortRef.current) {
+      zxingAbortRef.current.abort();
+      zxingAbortRef.current = null;
+    }
+    zxingReaderRef.current = null;
+  }, []);
+
   const closeScanner = useCallback(() => {
     setIsScannerOpen(false);
+    stopZxing();
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
@@ -100,7 +114,41 @@ export default function App() {
       rafIdRef.current = null;
     }
     detectorRef.current = null;
-  }, []);
+  }, [stopZxing]);
+
+  const handleImageUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const bitmap = await createImageBitmap(file);
+        const canvas = canvasRef.current || document.createElement("canvas");
+        canvasRef.current = canvas;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        ctx.drawImage(bitmap, 0, 0);
+        // Use ZXing to decode directly from the canvas
+        const reader = new BrowserQRCodeReader();
+        const result = await reader.decodeFromCanvas(canvas);
+        const value = result.getText();
+        if (value) {
+          setDecodedPayload(value);
+          try {
+            sessionStorage.setItem("decodedPayload", value);
+          } catch {}
+          closeScanner();
+          router.push("/broadcast");
+        }
+      } catch (err) {
+        setCameraError(
+          err instanceof Error ? err.message : "Unable to decode image",
+        );
+      }
+    },
+    [closeScanner, router],
+  );
 
   const openScanner = useCallback(async () => {
     setCameraError(null);
@@ -120,43 +168,68 @@ export default function App() {
         await videoRef.current.play();
       }
 
-      // Start decoding loop if supported
       const isBarcodeSupported = typeof window.BarcodeDetector !== "undefined";
-      if (!isBarcodeSupported) {
-        setCameraError(
-          "QR scanning not supported on this browser. Please try Chrome, Edge, or Safari 17+.",
-        );
+
+      // First try native BarcodeDetector
+      if (isBarcodeSupported) {
+        if (!detectorRef.current) {
+          const DetectorCtor = window.BarcodeDetector!;
+          detectorRef.current = new DetectorCtor({ formats: ["qr_code"] });
+        }
+
+        const detectFrame = async () => {
+          try {
+            if (!videoRef.current || !detectorRef.current) return;
+            const results = await detectorRef.current.detect(videoRef.current);
+            if (results && results.length > 0) {
+              const value = results[0].rawValue;
+              if (value) {
+                setDecodedPayload(value);
+                try {
+                  sessionStorage.setItem("decodedPayload", value);
+                } catch {}
+                closeScanner();
+                router.push("/broadcast");
+                return;
+              }
+            }
+          } catch {
+            // swallow
+          }
+          rafIdRef.current = requestAnimationFrame(detectFrame);
+        };
+        rafIdRef.current = requestAnimationFrame(detectFrame);
         return;
       }
 
-      if (!detectorRef.current) {
-        const DetectorCtor = window.BarcodeDetector!;
-        detectorRef.current = new DetectorCtor({ formats: ["qr_code"] });
-      }
-
-      const detectFrame = async () => {
-        try {
-          if (!videoRef.current || !detectorRef.current) return;
-          const results = await detectorRef.current.detect(videoRef.current);
-          if (results && results.length > 0) {
-            const value = results[0].rawValue;
-            if (value) {
-              setDecodedPayload(value);
-              try {
-                sessionStorage.setItem("decodedPayload", value);
-              } catch {}
-              closeScanner();
-              router.push("/broadcast");
-              return;
+      // Fallback to ZXing continuous decode if BarcodeDetector is not available
+      try {
+        const reader = new BrowserQRCodeReader();
+        zxingReaderRef.current = reader;
+        const abort = new AbortController();
+        zxingAbortRef.current = abort;
+        await reader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current!,
+          (result) => {
+            if (result) {
+              const value = result.getText();
+              if (value) {
+                setDecodedPayload(value);
+                try {
+                  sessionStorage.setItem("decodedPayload", value);
+                } catch {}
+                closeScanner();
+                router.push("/broadcast");
+              }
             }
-          }
-        } catch {
-          // Swallow detection errors to keep scanning
-        }
-        rafIdRef.current = requestAnimationFrame(detectFrame);
-      };
-
-      rafIdRef.current = requestAnimationFrame(detectFrame);
+          },
+        );
+      } catch (err) {
+        setCameraError(
+          err instanceof Error ? err.message : "Unable to access camera",
+        );
+      }
     } catch (err) {
       setCameraError(
         err instanceof Error ? err.message : "Unable to access camera",
@@ -173,7 +246,7 @@ export default function App() {
         <header className="mb-4 mt-[20vh]">
           <div className="rounded-xl border border-[var(--app-card-border)] bg-[var(--app-card-bg)] p-4 text-center">
             <div className="font-jetbrains text-2xl md:text-3xl tracking-wider leading-tight">
-              BASE OS
+              BASED AF OS
             </div>
             <div className="mt-0.5 text-xs text-[var(--app-foreground-muted)] font-jetbrains">
               Hardware Wallet Transaction Broadcasting for Base
@@ -313,7 +386,7 @@ export default function App() {
                 {cameraError ? (
                   <div className="text-red-500 text-sm">
                     {cameraError}. Please ensure camera permissions are granted
-                    and try again.
+                    and try again. Alternatively, upload a QR image below.
                   </div>
                 ) : (
                   <video
@@ -324,11 +397,24 @@ export default function App() {
                     muted
                   />
                 )}
-                {!cameraError && (
-                  <p className="text-xs text-[var(--app-foreground-muted)] text-center">
-                    Point your camera at a QR code
-                  </p>
-                )}
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-3 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)]"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Upload QR Image
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </div>
+                <canvas ref={canvasRef} className="hidden" />
               </div>
             </div>
           </div>
