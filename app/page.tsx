@@ -21,8 +21,8 @@ import {
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
-import { Home } from "./components/DemoComponents";
 import { Features } from "./components/DemoComponents";
+import Link from "next/link";
 
 export default function App() {
   const { setFrameReady, isFrameReady, context } = useMiniKit();
@@ -96,7 +96,57 @@ export default function App() {
         </header>
 
         <main className="flex-1">
-          {activeTab === "home" && <Home setActiveTab={setActiveTab} />}
+          {activeTab === "home" && (
+            <div className="space-y-4 animate-fade-in">
+              <h1 className="text-3xl font-bold">BaseOS</h1>
+              <p className="text-[var(--app-foreground-muted)]">
+                Scan your signed transaction payload in order to broadcast your
+                transaction
+              </p>
+              <div>
+                <Button variant="primary" size="md">
+                  Scan
+                </Button>
+              </div>
+              <div className="mt-8 space-y-3">
+                <h2 className="text-xl font-semibold">Resillience Resources</h2>
+                <ul className="space-y-2">
+                  <li>
+                    <Link
+                      href="/resources/how-to-use"
+                      className="text-[var(--app-accent)] hover:underline"
+                    >
+                      How to use BaseOS
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/resources/security-privacy"
+                      className="text-[var(--app-accent)] hover:underline"
+                    >
+                      Increasing your security and privacy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/resources/censorship-resistance"
+                      className="text-[var(--app-accent)] hover:underline"
+                    >
+                      Censorship resistance
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/resources/humanitarian-aid"
+                      className="text-[var(--app-accent)] hover:underline"
+                    >
+                      Humanitarian & Aid
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
           {activeTab === "features" && <Features setActiveTab={setActiveTab} />}
         </main>
 
