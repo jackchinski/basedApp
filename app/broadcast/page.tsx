@@ -52,10 +52,13 @@ export default function BroadcastPage() {
     setIsSubmitting(true);
     (async () => {
       try {
+        console.log("raw tx", rawTx);
         const res = await fetch("/api/broadcast", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rawTx: rawTx.trim() }),
+          body: JSON.stringify(
+            rawTx ? { rawTx: rawTx.trim() } : { payload: displayPayload },
+          ),
           cache: "no-store",
         });
         const json = await res.json();
@@ -63,59 +66,65 @@ export default function BroadcastPage() {
           throw new Error(json?.error || "Broadcast failed");
         }
         setTxHash(json.txHash);
+        console.log("Broadcast successful:", json.txHash);
+        router.push(
+          `/broadcast/confirmation?txHash=${encodeURIComponent(json.txHash)}`,
+        );
       } catch (e) {
         setError(e instanceof Error ? e.message : "Broadcast failed");
       } finally {
         setIsSubmitting(false);
       }
     })();
-  }, [rawTx]);
+  }, [rawTx, displayPayload, router]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="w-full max-w-md mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">Decoded Payload</h1>
-        {displayPayload ? (
-          <div className="mb-4 rounded-xl overflow-hidden border border-[var(--app-card-border)] bg-[var(--app-card-bg)] shadow">
-            <div className="px-4 py-2 border-b border-[var(--app-card-border)] text-xs text-[var(--app-foreground-muted)]">
-              Preview
+    <>
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="w-full max-w-md mx-auto px-4 py-8">
+          <h1 className="text-2xl font-bold mb-4">Decoded Payload</h1>
+          {displayPayload ? (
+            <div className="mb-4 rounded-xl overflow-hidden border border-[var(--app-card-border)] bg-[var(--app-card-bg)] shadow">
+              <div className="px-4 py-2 border-b border-[var(--app-card-border)] text-xs text-[var(--app-foreground-muted)]">
+                Preview
+              </div>
+              <pre className="p-4 whitespace-pre-wrap break-words text-sm font-mono">
+                {displayPayload}
+              </pre>
             </div>
-            <pre className="p-4 whitespace-pre-wrap break-words text-sm font-mono">
-              {displayPayload}
-            </pre>
+          ) : (
+            <div className="mb-4 text-[var(--app-foreground-muted)] text-sm">
+              No payload found.
+            </div>
+          )}
+          {error && <div className="mb-3 text-red-500 text-sm">{error}</div>}
+          {txHash && (
+            <div className="mb-3 text-sm">
+              Broadcasted. Tx Hash: <span className="break-all">{txHash}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-4 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)] w-full sm:w-auto"
+              onClick={handleReject}
+            >
+              Reject
+            </button>
+            <button
+              type="button"
+              className="bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
+              onClick={handleBroadcast}
+              disabled={isSubmitting || (!rawTx && !displayPayload)}
+            >
+              {isSubmitting ? "Broadcasting..." : "Broadcast"}
+            </button>
           </div>
-        ) : (
-          <div className="mb-4 text-[var(--app-foreground-muted)] text-sm">
-            No payload found.
+          <div className="mt-6 text-xs text-[var(--app-foreground-muted)]">
+            <Link href="/">Back to Home</Link>
           </div>
-        )}
-        {error && <div className="mb-3 text-red-500 text-sm">{error}</div>}
-        {txHash && (
-          <div className="mb-3 text-sm">
-            Broadcasted. Tx Hash: <span className="break-all">{txHash}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-4 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)] w-full sm:w-auto"
-            onClick={handleReject}
-          >
-            Reject
-          </button>
-          <button
-            type="button"
-            className="bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
-            onClick={handleBroadcast}
-            disabled={!rawTx || isSubmitting}
-          >
-            {isSubmitting ? "Broadcasting..." : "Broadcast"}
-          </button>
-        </div>
-        <div className="mt-6 text-xs text-[var(--app-foreground-muted)]">
-          <Link href="/">Back to Home</Link>
         </div>
       </div>
-    </div>
+    </>
   );
 }

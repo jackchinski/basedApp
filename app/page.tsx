@@ -166,8 +166,11 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen font-sans text-[var(--app-foreground)] mini-app-theme from-[var(--app-background)] to-[var(--app-gray)]">
-      <div className="w-full max-w-md mx-auto px-4 pt-6">
-        <header className="mb-4">
+      <div
+        className="w-full max-w-md mx-auto px-4 pt-9"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.8rem)" }}
+      >
+        <header className="mb-4 mt-[20vh]">
           <div className="rounded-xl border border-[var(--app-card-border)] bg-[var(--app-card-bg)] p-4 text-center">
             <div className="font-jetbrains text-2xl md:text-3xl tracking-wider leading-tight">
               BASE OS
@@ -185,8 +188,8 @@ export default function App() {
           {activeTab === "home" && (
             <div className="space-y-6 animate-fade-in">
               <p className="text-[var(--app-foreground-muted)] text-sm md:text-base max-w-prose">
-                Scan your signed transaction payload from BaseOS desktop in order to broadcast your
-                transaction
+                Scan your signed transaction payload from BaseOS desktop in
+                order to broadcast your transaction
               </p>
               <div className="flex justify-center mb-16">
                 <Button
