@@ -18,16 +18,35 @@ import {
   WalletDropdown,
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
 import { Features } from "./components/DemoComponents";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+// Minimal typings for the BarcodeDetector API to avoid 'any'
+type QRDetector = {
+  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue?: string }>>;
+};
+declare global {
+  interface Window {
+    BarcodeDetector?: new (options: { formats: string[] }) => QRDetector;
+  }
+}
 
 export default function App() {
   const { setFrameReady, isFrameReady, context } = useMiniKit();
   const [frameAdded, setFrameAdded] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const detectorRef = useRef<QRDetector | null>(null);
+  const [decodedPayload, setDecodedPayload] = useState<string | null>(null);
+  const router = useRouter();
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
@@ -70,6 +89,81 @@ export default function App() {
     return null;
   }, [context, frameAdded, handleAddFrame]);
 
+  const closeScanner = useCallback(() => {
+    setIsScannerOpen(false);
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    detectorRef.current = null;
+  }, []);
+
+  const openScanner = useCallback(async () => {
+    setCameraError(null);
+    setIsScannerOpen(true);
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: "environment" },
+        },
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      mediaStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      // Start decoding loop if supported
+      const isBarcodeSupported = typeof window.BarcodeDetector !== "undefined";
+      if (!isBarcodeSupported) {
+        setCameraError(
+          "QR scanning not supported on this browser. Please try Chrome, Edge, or Safari 17+.",
+        );
+        return;
+      }
+
+      if (!detectorRef.current) {
+        const DetectorCtor = window.BarcodeDetector!;
+        detectorRef.current = new DetectorCtor({ formats: ["qr_code"] });
+      }
+
+      const detectFrame = async () => {
+        try {
+          if (!videoRef.current || !detectorRef.current) return;
+          const results = await detectorRef.current.detect(videoRef.current);
+          if (results && results.length > 0) {
+            const value = results[0].rawValue;
+            if (value) {
+              setDecodedPayload(value);
+              try {
+                sessionStorage.setItem("decodedPayload", value);
+              } catch {}
+              closeScanner();
+              router.push("/broadcast");
+              return;
+            }
+          }
+        } catch {
+          // Swallow detection errors to keep scanning
+        }
+        rafIdRef.current = requestAnimationFrame(detectFrame);
+      };
+
+      rafIdRef.current = requestAnimationFrame(detectFrame);
+    } catch (err) {
+      setCameraError(
+        err instanceof Error ? err.message : "Unable to access camera",
+      );
+    }
+  }, [closeScanner, router]);
+
   return (
     <div className="flex flex-col min-h-screen font-sans text-[var(--app-foreground)] mini-app-theme from-[var(--app-background)] to-[var(--app-gray)]">
       <div className="w-full max-w-md mx-auto px-4 py-3">
@@ -104,10 +198,20 @@ export default function App() {
                 transaction
               </p>
               <div>
-                <Button variant="primary" size="md">
+                <Button variant="primary" size="md" onClick={openScanner}>
                   Scan
                 </Button>
               </div>
+              {decodedPayload && (
+                <div className="mt-4 p-3 border border-[var(--app-card-border)] rounded-lg bg-[var(--app-card-bg)]">
+                  <div className="text-sm font-medium mb-1">
+                    Decoded Payload
+                  </div>
+                  <pre className="whitespace-pre-wrap break-words text-xs">
+                    {decodedPayload}
+                  </pre>
+                </div>
+              )}
               <div className="mt-8 space-y-3">
                 <h2 className="text-xl font-semibold">Resillience Resources</h2>
                 <ul className="space-y-2">
@@ -161,6 +265,41 @@ export default function App() {
           </Button>
         </footer>
       </div>
+
+      {isScannerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="w-full max-w-md mx-auto px-4">
+            <div className="bg-[var(--app-card-bg)] border border-[var(--app-card-border)] rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-card-border)]">
+                <h3 className="font-medium">Scan</h3>
+                <button
+                  type="button"
+                  className="text-[var(--app-foreground-muted)] hover:text-[var(--app-foreground)]"
+                  onClick={closeScanner}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-4">
+                {cameraError ? (
+                  <div className="text-red-500 text-sm">
+                    {cameraError}. Please ensure camera permissions are granted
+                    and try again.
+                  </div>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    className="w-full rounded-lg bg-black"
+                    playsInline
+                    autoPlay
+                    muted
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
