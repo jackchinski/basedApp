@@ -5,19 +5,19 @@ import {
   useAddFrame,
   useOpenUrl,
 } from "@coinbase/onchainkit/minikit";
-import {
-  Name,
-  Identity,
-  Address,
-  Avatar,
-  EthBalance,
-} from "@coinbase/onchainkit/identity";
-import {
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet";
+// import {
+//   Name,
+//   Identity,
+//   Address,
+//   Avatar,
+//   EthBalance,
+// } from "@coinbase/onchainkit/identity";
+// import {
+//   ConnectWallet,
+//   Wallet,
+//   WalletDropdown,
+//   WalletDropdownDisconnect,
+// } from "@coinbase/onchainkit/wallet";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Button } from "./components/DemoComponents";
 import { Icon } from "./components/DemoComponents";
@@ -166,39 +166,51 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen font-sans text-[var(--app-foreground)] mini-app-theme from-[var(--app-background)] to-[var(--app-gray)]">
-      <div className="w-full max-w-md mx-auto px-4 py-3">
-        <header className="flex justify-between items-center mb-3 h-11">
-          <div>
-            <div className="flex items-center space-x-2">
-              <Wallet className="z-10">
-                <ConnectWallet>
-                  <Name className="text-inherit" />
-                </ConnectWallet>
-                <WalletDropdown>
-                  <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
-                    <Avatar />
-                    <Name />
-                    <Address />
-                    <EthBalance />
-                  </Identity>
-                  <WalletDropdownDisconnect />
-                </WalletDropdown>
-              </Wallet>
+      <div className="w-full max-w-md mx-auto px-4 pt-6">
+        <header className="mb-4">
+          <div className="rounded-xl border border-[var(--app-card-border)] bg-[var(--app-card-bg)] p-4 text-center">
+            <div className="font-jetbrains text-2xl md:text-3xl tracking-wider leading-tight">
+              BASE OS
+            </div>
+            <div className="mt-0.5 text-xs text-[var(--app-foreground-muted)] font-jetbrains">
+              Hardware Wallet Transaction Broadcasting for Base
             </div>
           </div>
-          <div>{saveFrameButton}</div>
+          {saveFrameButton && (
+            <div className="flex justify-end mt-2">{saveFrameButton}</div>
+          )}
         </header>
 
         <main className="flex-1">
           {activeTab === "home" && (
-            <div className="space-y-4 animate-fade-in">
-              <h1 className="text-3xl font-bold">BaseOS</h1>
-              <p className="text-[var(--app-foreground-muted)]">
-                Scan your signed transaction payload in order to broadcast your
+            <div className="space-y-6 animate-fade-in">
+              <p className="text-[var(--app-foreground-muted)] text-sm md:text-base max-w-prose">
+                Scan your signed transaction payload from BaseOS desktop in order to broadcast your
                 transaction
               </p>
-              <div>
-                <Button variant="primary" size="md" onClick={openScanner}>
+              <div className="flex justify-center mb-16">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full text-white justify-center mx-auto"
+                  icon={
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                  }
+                  onClick={openScanner}
+                >
                   Scan
                 </Button>
               </div>
@@ -212,39 +224,53 @@ export default function App() {
                   </pre>
                 </div>
               )}
-              <div className="mt-8 space-y-3">
-                <h2 className="text-xl font-semibold">Resillience Resources</h2>
-                <ul className="space-y-2">
+              <div className="mt-14 space-y-3">
+                <h2 className="text-lg md:text-xl font-semibold">
+                  Resilience Resources
+                </h2>
+                <ul className="space-y-1">
                   <li>
                     <Link
                       href="/resources/how-to-use"
-                      className="text-[var(--app-accent)] hover:underline"
+                      className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-[var(--app-accent-light)]"
                     >
-                      How to use BaseOS
+                      <span className="text-[var(--app-foreground)]">
+                        How to use BaseOS
+                      </span>
+                      <span className="text-[var(--app-accent)]">→</span>
                     </Link>
                   </li>
                   <li>
                     <Link
                       href="/resources/security-privacy"
-                      className="text-[var(--app-accent)] hover:underline"
+                      className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-[var(--app-accent-light)]"
                     >
-                      Increasing your security and privacy
+                      <span className="text-[var(--app-foreground)]">
+                        Increasing your security and privacy
+                      </span>
+                      <span className="text-[var(--app-accent)]">→</span>
                     </Link>
                   </li>
                   <li>
                     <Link
                       href="/resources/censorship-resistance"
-                      className="text-[var(--app-accent)] hover:underline"
+                      className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-[var(--app-accent-light)]"
                     >
-                      Censorship resistance
+                      <span className="text-[var(--app-foreground)]">
+                        Censorship resistance
+                      </span>
+                      <span className="text-[var(--app-accent)]">→</span>
                     </Link>
                   </li>
                   <li>
                     <Link
                       href="/resources/humanitarian-aid"
-                      className="text-[var(--app-accent)] hover:underline"
+                      className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-[var(--app-accent-light)]"
                     >
-                      Humanitarian & Aid
+                      <span className="text-[var(--app-foreground)]">
+                        Humanitarian & Aid
+                      </span>
+                      <span className="text-[var(--app-accent)]">→</span>
                     </Link>
                   </li>
                 </ul>
@@ -269,7 +295,7 @@ export default function App() {
       {isScannerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
           <div className="w-full max-w-md mx-auto px-4">
-            <div className="bg-[var(--app-card-bg)] border border-[var(--app-card-border)] rounded-xl overflow-hidden">
+            <div className="bg-[var(--app-card-bg)] backdrop-blur-md border border-[var(--app-card-border)] rounded-xl overflow-hidden shadow-2xl">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-card-border)]">
                 <h3 className="font-medium">Scan</h3>
                 <button
@@ -280,7 +306,7 @@ export default function App() {
                   ×
                 </button>
               </div>
-              <div className="p-4">
+              <div className="p-4 space-y-3">
                 {cameraError ? (
                   <div className="text-red-500 text-sm">
                     {cameraError}. Please ensure camera permissions are granted
@@ -289,11 +315,16 @@ export default function App() {
                 ) : (
                   <video
                     ref={videoRef}
-                    className="w-full rounded-lg bg-black"
+                    className="w-full h-80 object-cover rounded-lg bg-black"
                     playsInline
                     autoPlay
                     muted
                   />
+                )}
+                {!cameraError && (
+                  <p className="text-xs text-[var(--app-foreground-muted)] text-center">
+                    Point your camera at a QR code
+                  </p>
                 )}
               </div>
             </div>

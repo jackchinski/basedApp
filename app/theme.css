@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@400;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -99,6 +99,18 @@ body {
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
+}
+
+/* Developer-style monospace utility */
+.font-jetbrains {
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ASCII banner sizing that shrinks on small screens */
+.ascii-banner {
+  font-size: clamp(10px, 2.2vw, 14px);
+  line-height: 1.05;
 }
 
 @layer utilities {

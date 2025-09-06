@@ -76,8 +76,11 @@ export default function BroadcastPage() {
       <div className="w-full max-w-md mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">Decoded Payload</h1>
         {displayPayload ? (
-          <div className="mb-4 p-3 border border-[var(--app-card-border)] rounded-lg bg-[var(--app-card-bg)]">
-            <pre className="whitespace-pre-wrap break-words text-sm">
+          <div className="mb-4 rounded-xl overflow-hidden border border-[var(--app-card-border)] bg-[var(--app-card-bg)] shadow">
+            <div className="px-4 py-2 border-b border-[var(--app-card-border)] text-xs text-[var(--app-foreground-muted)]">
+              Preview
+            </div>
+            <pre className="p-4 whitespace-pre-wrap break-words text-sm font-mono">
               {displayPayload}
             </pre>
           </div>
@@ -95,14 +98,14 @@ export default function BroadcastPage() {
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
-            className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-4 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)]"
+            className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-4 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)] w-full sm:w-auto"
             onClick={handleReject}
           >
             Reject
           </button>
           <button
             type="button"
-            className="bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white px-4 py-2 rounded-lg"
+            className="bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
             onClick={handleBroadcast}
             disabled={!rawTx || isSubmitting}
           >
