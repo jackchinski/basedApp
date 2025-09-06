@@ -67,9 +67,16 @@ export default function BroadcastPage() {
         }
         setTxHash(json.txHash);
         console.log("Broadcast successful:", json.txHash);
-        router.push(
-          `/broadcast/confirmation?txHash=${encodeURIComponent(json.txHash)}`,
-        );
+        const url = `/broadcast/confirmation?txHash=${encodeURIComponent(json.txHash)}`;
+        try {
+          router.push(url);
+        } catch {}
+        // Safari fallback: force navigation after a short delay
+        setTimeout(() => {
+          if (typeof window !== "undefined") {
+            window.location.assign(url);
+          }
+        }, 50);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Broadcast failed");
       } finally {
@@ -88,7 +95,7 @@ export default function BroadcastPage() {
               <div className="px-4 py-2 border-b border-[var(--app-card-border)] text-xs text-[var(--app-foreground-muted)]">
                 Preview
               </div>
-              <pre className="p-4 whitespace-pre-wrap break-words text-sm font-mono">
+              <pre className="p-4 whitespace-pre-wrap break-words text-sm font-mono max-h-[55vh] overflow-auto">
                 {displayPayload}
               </pre>
             </div>
@@ -103,22 +110,24 @@ export default function BroadcastPage() {
               Broadcasted. Tx Hash: <span className="break-all">{txHash}</span>
             </div>
           )}
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-4 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)] w-full sm:w-auto"
-              onClick={handleReject}
-            >
-              Reject
-            </button>
-            <button
-              type="button"
-              className="bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
-              onClick={handleBroadcast}
-              disabled={isSubmitting || (!rawTx && !displayPayload)}
-            >
-              {isSubmitting ? "Broadcasting..." : "Broadcast"}
-            </button>
+          <div className="sticky bottom-0 bg-background pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                className="border border-[var(--app-card-border)] text-[var(--app-foreground)] px-4 py-2 rounded-lg bg-[var(--app-gray)] hover:bg-[var(--app-gray-dark)] w-full sm:w-auto"
+                onClick={handleReject}
+              >
+                Reject
+              </button>
+              <button
+                type="button"
+                className="bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white px-4 py-2 rounded-lg w-full sm:w-auto"
+                onClick={handleBroadcast}
+                disabled={isSubmitting || (!rawTx && !displayPayload)}
+              >
+                {isSubmitting ? "Broadcasting..." : "Broadcast"}
+              </button>
+            </div>
           </div>
           <div className="mt-6 text-xs text-[var(--app-foreground-muted)]">
             <Link href="/">Back to Home</Link>

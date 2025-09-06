@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export default async function BroadcastConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
   const txHashParam = params?.txHash;
@@ -13,8 +13,12 @@ export default async function BroadcastConfirmationPage({
     ? txHashParam[0]
     : txHashParam || "";
 
+  type GlobalWithProcess = typeof globalThis & {
+    process?: { env?: { NEXT_PUBLIC_BASESCAN_URL?: string } };
+  };
   const basescanBaseUrl =
-    process.env.NEXT_PUBLIC_BASESCAN_URL || "https://basescan.org";
+    (globalThis as GlobalWithProcess).process?.env?.NEXT_PUBLIC_BASESCAN_URL ??
+    "https://basescan.org";
   const basescanTxUrl = txHash
     ? `${basescanBaseUrl}/tx/${txHash}`
     : basescanBaseUrl;
