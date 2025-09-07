@@ -246,7 +246,7 @@ export default function App() {
         <header className="mb-4 mt-[20vh]">
           <div className="rounded-xl border border-[var(--app-card-border)] bg-[var(--app-card-bg)] p-4 text-center">
             <div className="font-jetbrains text-2xl md:text-3xl tracking-wider leading-tight">
-              BASED AF OS
+              BASE OS MOBILE
             </div>
             <div className="mt-0.5 text-xs text-[var(--app-foreground-muted)] font-jetbrains">
               Hardware Wallet Transaction Broadcasting for Base
@@ -334,17 +334,6 @@ export default function App() {
                     >
                       <span className="text-[var(--app-foreground)]">
                         Censorship resistance
-                      </span>
-                      <span className="text-[var(--app-accent)]">→</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/resources/humanitarian-aid"
-                      className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-[var(--app-accent-light)]"
-                    >
-                      <span className="text-[var(--app-foreground)]">
-                        Humanitarian & Aid
                       </span>
                       <span className="text-[var(--app-accent)]">→</span>
                     </Link>
